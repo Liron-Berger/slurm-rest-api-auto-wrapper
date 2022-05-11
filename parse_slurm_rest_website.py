@@ -15,10 +15,10 @@ page = requests.get(URL)
 
 soup = BeautifulSoup(page.content, "html.parser")
 
-def _remove_version(name):
+def _parse_name(name):
     for v in VERSION:
         name = name.replace(v, '')
-    return name
+    return name.title().replace('_', '')
 
 PREFIX = """from __future__ import annotations
 from typing import *
@@ -44,6 +44,19 @@ def {method_name}({parameters}) -> {return_type}:
 """
 DEFINITIONS = {}
 
+def _check_known_type_and_convert(type_):
+    TYPE_CONVERTIONS = {
+        'bigdecimal': 'integer',
+        'long': 'integer',
+        'double': 'number',
+    }
+    type_ = type_.lower()
+    type_ = TYPE_CONVERTIONS.get(type_, type_)
+    if type_.lower() in ('string', 'integer', 'boolean', 'object', 'number',):
+        return type_
+    return None
+
+BLA = None
 @dataclass
 class Param:
     name: str
@@ -52,30 +65,32 @@ class Param:
     description: str
 
     def _parse_type(self):
-        ARRAY_PATTERN = re.compile(r'array\[(?P<item_type>\S+)\]')
+        ARRAY_PATTERN = re.compile(r'Array\[(?P<item_type>\S+)\]')
         if (match := re.match(ARRAY_PATTERN, self.type)):
             item_type = match.groupdict()['item_type']
+            print(item_type)
+            if item_type.lower() == 'string':
+                global BLA
+                BLA = self.name
             return 'array'
-            
-        if 'v0' in self.type:
-            DEFINITIONS[self.type] = {
-                'properties': {
-                    'name': {
-                        'type': 'string'
-                    }
+
+        if type_ := _check_known_type_and_convert(self.type):
+            return type_
+        
+        DEFINITIONS[self.type] = {
+            'properties': {
+                'name': {
+                    'type': 'string'
                 }
             }
-            return 'object'
-            return {'$ref': f'#/definitions/{self.type}'}
-            
-        TYPE_CONVERTIONS = {
-            'bigdecimal': 'integer',
-            'long': 'integer',
-            'double': 'number',
         }
+        
+        # print(self.type)
+        # print(DEFINITIONS.keys())
+        return 'object'
 
-        return TYPE_CONVERTIONS.get(self.type, self.type)
-
+        return {'$ref': f'#/definitions/{self.type}'}
+            
     def to_json(self):
         return {
             'name': self.name,
@@ -122,7 +137,7 @@ with open('slurm_rest_api.py', 'w') as slurm_rest_api_script:
     models = soup.find_all("div", class_="model")
     for model in models:
         name = model.find('h3').find('code').text
-        name = _remove_version(name)
+        name = _parse_name(name)
         
         params = model.find_all('div', class_='param')
         params_desc = model.find_all('div', class_='param-desc')
@@ -137,7 +152,7 @@ with open('slurm_rest_api.py', 'w') as slurm_rest_api_script:
             p = Param(
                 name=re.match(PARAM_NAME_PATTERN, param.text).groupdict()['param_name'],
                 optional='optional' in param.text,
-                type=param_type.lower(),
+                type=_parse_name(param_type),
                 description=desc.text.replace(param_type, '').strip()
             )
             model.params.append(p)
@@ -145,6 +160,10 @@ with open('slurm_rest_api.py', 'w') as slurm_rest_api_script:
         auto_code = _generate_model(model.to_json())
         auto_code = '\n'.join(filter(lambda line: not (line.startswith('#') or line.startswith('from')) and bool(line), auto_code.splitlines()))
         slurm_rest_api_script.write(f'{auto_code}\n\n\n')
+
+        if BLA:
+            import sys
+            sys.exit(0)
 
     methods = soup.find_all("div", class_="method")
     for method in methods:
@@ -157,7 +176,7 @@ with open('slurm_rest_api.py', 'w') as slurm_rest_api_script:
             return_type = text.text.strip()
         else:
             return_type = 'None'
-        return_type = _remove_version(return_type).title().replace('_', '')
+        return_type = _parse_name(return_type)
 
         parameters = {}
         for param in method.find_all('div', class_='field-items'):
