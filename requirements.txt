@@ -1,0 +1,4 @@
+pydantic
+datamodel-code-generator[http]
+requests
+beautifulsoup4
