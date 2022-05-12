@@ -84,7 +84,7 @@ class Param:
                 }
             }
         elif converted_type := _check_known_type_and_convert(self.type):
-            return {'type': type_}
+            return {'type': converted_type}
         return {'type': 'object'}
 
     def to_json(self):
