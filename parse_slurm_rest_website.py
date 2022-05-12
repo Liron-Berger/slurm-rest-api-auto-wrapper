@@ -23,7 +23,7 @@ import requests
 
 
 """
-ARRAY_PATTERN = re.compile(r'Array\[(?P<item_type>\S+)\]')
+ARRAY_PATTERN = re.compile(r'array\[(?P<item_type>\S+)\]')
 
 REQUIRED_PARAM = re.compile(r'((?P<param_name>\S+) ){1,2}\(required\)')
 OPTIONAL_PARAM = re.compile(r'(?P<param_name>\S+) \(optional\)')
@@ -42,9 +42,16 @@ def {method_name}({parameters}) -> {return_type}:
 
 
 def _parse_name(name):
+    is_array = False
+    if match := re.match(ARRAY_PATTERN, name):
+        is_array = True
+        name = match.groupdict()['item_type']
     if VERSION in name:
         name = name.split(f'{VERSION}_')[1]
-    return name.title().replace('_', '').replace(']', '')
+    name = name.title().replace('_', '')
+    if is_array:
+        return f"array[{name}]"
+    return name
 
 
 def _check_known_type_and_convert(type_):
