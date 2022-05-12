@@ -22,6 +22,11 @@ from pydantic import BaseModel, Field
 import requests
 
 
+import urllib.parse
+BASE_URL = 'http://slurm:9999'
+session = requests.Session()
+session.slurm_url = lambda path: urllib.parse.urljoin(BASE_URL, path)
+    
 """
 ARRAY_PATTERN = re.compile(r'array\[(?P<item_type>\S+)\]')
 
@@ -36,7 +41,7 @@ def {method_name}({parameters}) -> {return_type}:
 
     {params_doc}
     \"\"\"
-    return requests.{http_method}('{url}')
+    return session.{http_method}(session.slurm_url(f'{url}'))
 
 """
 
@@ -202,26 +207,40 @@ def main():
             items = {}
             for param, param_doc in zip(param_items.find_all('div', class_='param'), param_items.find_all('div', class_='param-desc')):
                 param_name = param.text
+                default = False
                 if match := re.match(REQUIRED_PARAM, param_name):
                     key = match.groups()[0]
                 elif match := re.match(OPTIONAL_PARAM, param_name):
-                    key = f'{match.groups()[0]}=None'
+                    key = f'{match.groups()[0]}'
+                    default = True
                 else:
                     raise NotImplementedError()
             
                 items[
                     _remove_version(key).strip()
-                ] = param_doc.text.strip()
+                ] = {
+                    'doc': param_doc.text.replace('default: null', '').strip(),
+                    'default': default
+                }
             parameters[label.text.split()[0].lower()] = items
 
+        def _build_url(url, parameters):
+            if parameters['query']:
+                return f"{url}?{'&'.join(f'{query_param}=' + '{' + query_param + '}' for query_param in parameters['query'])}"
+            return url
+
+        def _build_param(param, param_opt):
+            if param_opt['default']:
+                return f'{param}=None'
+            return param
         
         func = REQUEST_TEMPLATE.format(
             method_name=method_name,
             http_method=http_method,
-            parameters=', '.join([param for param in list(parameters['path'].keys()) + list(parameters['query'].keys())]),
-            url=url,
+            parameters=', '.join([_build_param(param, param_opt) for param, param_opt in list(parameters['path'].items()) + list(parameters['query'].items())]),
+            url=_build_url(url, parameters),
             method_doc=method_doc,
-            params_doc='\n    '.join([FUNCTION_PARAM_TEMPLATE.format(param_name=param_name, param_doc=param_doc) for param_name, param_doc in (list(parameters['path'].items()) + list(parameters['query'].items()))]),
+            params_doc='\n    '.join([FUNCTION_PARAM_TEMPLATE.format(param_name=param_name, param_doc=param_doc['doc']) for param_name, param_doc in (list(parameters['path'].items()) + list(parameters['query'].items()))]),
             return_type=return_type
         )
         slurm_rest_api_script += func
