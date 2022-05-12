@@ -1855,7 +1855,7 @@ def slurmdbdDeleteAccount(account_name) -> ResponseAccountDelete:
     return session.delete(session.slurm_url(f'/slurmdb/v0.0.37/account/{account_name}'))
 
 
-def slurmdbdDeleteAssociation(cluster=None, account, user, partition=None) -> ResponseAssociationDelete:
+def slurmdbdDeleteAssociation(account, user, cluster=None, partition=None) -> ResponseAssociationDelete:
     """
     Delete association (slurmdbdDeleteAssociation)
 
