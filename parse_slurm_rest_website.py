@@ -41,13 +41,18 @@ def {method_name}({parameters}) -> {return_type}:
 """
 
 
+def _remove_version(name):
+    if VERSION in name:
+        name = name.split(f'{VERSION}_')[1]
+    return name
+
+
 def _parse_name(name):
     is_array = False
     if match := re.match(ARRAY_PATTERN, name):
         is_array = True
         name = match.groupdict()['item_type']
-    if VERSION in name:
-        name = name.split(f'{VERSION}_')[1]
+    name = _remove_version(name)
     name = name.title().replace('_', '')
     if is_array:
         return f"array[{name}]"
@@ -201,7 +206,7 @@ for method in methods:
             raise NotImplementedError()
         
         parameters[
-            key
+            _remove_version(key)
         ] = param.find('div', class_='param-desc').text
 
     func = REQUEST_TEMPLATE.format(
