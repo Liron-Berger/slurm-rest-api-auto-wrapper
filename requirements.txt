@@ -2,3 +2,4 @@ pydantic
 datamodel-code-generator[http]
 requests
 beautifulsoup4
+autopep8

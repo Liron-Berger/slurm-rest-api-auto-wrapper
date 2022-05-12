@@ -6,19 +6,15 @@ from bs4 import BeautifulSoup
 from datamodel_code_generator import InputFileType, generate
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import autopep8
 
-VERSION = ('dbv0.0.37_', 'v0.0.37_', 'v0_0_37_', )
+VERSION = '37'
 PARAM_NAME_PATTERN = re.compile(r'(?P<param_name>\S+)( \(optional\))?')
 
 URL = "https://slurm.schedmd.com/rest_api.html"
 page = requests.get(URL)
 
 soup = BeautifulSoup(page.content, "html.parser")
-
-def _parse_name(name):
-    for v in VERSION:
-        name = name.replace(v, '')
-    return name.title().replace('_', '')
 
 PREFIX = """from __future__ import annotations
 from typing import *
@@ -43,7 +39,13 @@ def {method_name}({parameters}) -> {return_type}:
     return requests.{http_method}('{url}')
 
 """
-DEFINITIONS = {}
+
+
+def _parse_name(name):
+    if VERSION in name:
+        name = name.split(f'{VERSION}_')[1]
+    return name.title().replace('_', '').replace(']', '')
+
 
 def _check_known_type_and_convert(type_):
     TYPE_CONVERTIONS = {
@@ -57,6 +59,7 @@ def _check_known_type_and_convert(type_):
         return type_
     return None
 
+
 @dataclass
 class Param:
     name: str
@@ -65,11 +68,8 @@ class Param:
     description: str
 
     def _parse_type(self):
-        type_ = None
-
         if (match := re.match(ARRAY_PATTERN, self.type)):
             item_type = match.groupdict()['item_type']
-            type_ = 'array'
             if not _check_known_type_and_convert(item_type):
                 return {
                     'type': 'array',
@@ -85,7 +85,7 @@ class Param:
             }
         elif converted_type := _check_known_type_and_convert(self.type):
             return {'type': converted_type}
-        return {'type': 'object'}
+        return {'$ref': f'#/definitions/{self.type}'}
 
     def to_json(self):
         return {
@@ -109,7 +109,6 @@ class Model:
             'title': self.title,
             'type': 'object',
             'properties': {param.to_json()['name']: param.to_json()['property'] for param in self.params},
-            # 'definitions': DEFINITIONS
         }
 
 
@@ -127,64 +126,47 @@ def _generate_model(json_schema):
         model: str = output.read_text()
         return model
 
-slurm_rest_api_script = ''
 
-slurm_rest_api_script += PREFIX
+def generate_models():
+    raw_models = soup.find_all("div", class_="model")
 
-models = soup.find_all("div", class_="model")
+    models = []
+    for raw_model in raw_models:
+        name = raw_model.find('h3').find('code').text
+        name = _parse_name(name)
+        
+        params = raw_model.find_all('div', class_='param')
+        params_desc = raw_model.find_all('div', class_='param-desc')
+
+        model = Model(
+            title=name,
+            params=[],
+            description=raw_model.find('div', class_='model-description').text,
+        )
+        for param, desc in zip(params, params_desc):
+            param_type = desc.find('span', class_='param-type').text
+            p = Param(
+                name=re.match(PARAM_NAME_PATTERN, param.text).groupdict()['param_name'],
+                optional='optional' in param.text,
+                type=_parse_name(param_type),
+                description=desc.text.replace(param_type, '').strip()
+            )
+            model.params.append(p)
+        models.append(model)
+    return models
+        
+
+slurm_rest_api_script = PREFIX
 
 definitions = {}
+models = generate_models()
 for model in models:
-    name = model.find('h3').find('code').text
-    name = _parse_name(name)
-    
-    params = model.find_all('div', class_='param')
-    params_desc = model.find_all('div', class_='param-desc')
-
-    model = Model(
-        title=name,
-        params=[],
-        description=model.find('div', class_='model-description').text,
-    )
-    for param, desc in zip(params, params_desc):
-        param_type = desc.find('span', class_='param-type').text
-        p = Param(
-            name=re.match(PARAM_NAME_PATTERN, param.text).groupdict()['param_name'],
-            optional='optional' in param.text,
-            type=_parse_name(param_type),
-            description=desc.text.replace(param_type, '').strip()
-        )
-        model.params.append(p)
     definitions[model.title] = model.to_json()
-
 for model in models:
-    name = model.find('h3').find('code').text
-    name = _parse_name(name)
-    
-    params = model.find_all('div', class_='param')
-    params_desc = model.find_all('div', class_='param-desc')
-
-    model = Model(
-        title=name,
-        params=[],
-        description=model.find('div', class_='model-description').text,
-    )
-    for param, desc in zip(params, params_desc):
-        param_type = desc.find('span', class_='param-type').text
-        p = Param(
-            name=re.match(PARAM_NAME_PATTERN, param.text).groupdict()['param_name'],
-            optional='optional' in param.text,
-            type=_parse_name(param_type),
-            description=desc.text.replace(param_type, '').strip()
-        )
-        model.params.append(p)
-
-    mm = model.to_json()
-    mm['definitions'] = definitions
     if model.title in slurm_rest_api_script:
         continue
 
-    auto_code = _generate_model(mm)
+    auto_code = _generate_model(dict(**model.to_json(), definitions=definitions))
     auto_code = '\n'.join(filter(lambda line: not (line.startswith('#') or line.startswith('from')) and bool(line), auto_code.splitlines()))
     slurm_rest_api_script += f'{auto_code}\n\n\n'
 
@@ -228,4 +210,4 @@ for method in methods:
 
 
 with open('slurm_rest_api.py', 'w') as f:
-    f.write(slurm_rest_api_script)
+    f.write(autopep8.fix_code(slurm_rest_api_script))
