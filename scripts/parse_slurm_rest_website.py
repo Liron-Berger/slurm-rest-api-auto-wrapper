@@ -168,58 +168,68 @@ def generate_models():
     return models
         
 
-slurm_rest_api_script = PREFIX
+def main():
+    slurm_rest_api_script = PREFIX
 
-definitions = {}
-models = generate_models()
-for model in models:
-    definitions[model.title] = model.to_json()
-for model in models:
-    if model.title in slurm_rest_api_script:
-        continue
+    definitions = {}
+    models = generate_models()
+    for model in models:
+        definitions[model.title] = model.to_json()
+    for model in models:
+        if model.title in slurm_rest_api_script:
+            continue
 
-    auto_code = _generate_model(dict(**model.to_json(), definitions=definitions))
-    auto_code = '\n'.join(filter(lambda line: not (line.startswith('#') or line.startswith('from')) and bool(line), auto_code.splitlines()))
-    slurm_rest_api_script += f'{auto_code}\n\n\n'
+        auto_code = _generate_model(dict(**model.to_json(), definitions=definitions))
+        auto_code = '\n'.join(filter(lambda line: not (line.startswith('#') or line.startswith('from')) and bool(line), auto_code.splitlines()))
+        slurm_rest_api_script += f'{auto_code}\n\n\n'
 
-methods = soup.find_all("div", class_="method")
-for method in methods:
-    method_name = method.find('span', class_='nickname').text
-    http_method = method.find('span', class_="http-method").text
-    url = method.find('code', class_="huge").text.replace(http_method, '').strip()
-    method_doc = method.find('div', class_='method-summary').text
-    
-    if text := method.find('div', class_='return-type'):
-        return_type = text.text.strip()
-    else:
-        return_type = 'None'
-    return_type = _parse_name(return_type)
-
-    parameters = {}
-    for param in method.find_all('div', class_='field-items'):
-        param_name = param.find('div', class_='param').text
-        if match := re.match(REQUIRED_PARAM, param_name):
-            key = match.groups()[0]
-        elif match := re.match(OPTIONAL_PARAM, param_name):
-            key = f'{match.groups()[0]}=None'
-        else:
-            raise NotImplementedError()
+    methods = soup.find_all("div", class_="method")
+    for method in methods:
+        method_name = method.find('span', class_='nickname').text
+        http_method = method.find('span', class_="http-method").text
+        url = method.find('code', class_="huge").text.replace(http_method, '').strip()
+        method_doc = method.find('div', class_='method-summary').text
         
-        parameters[
-            _remove_version(key)
-        ] = param.find('div', class_='param-desc').text
+        if text := method.find('div', class_='return-type'):
+            return_type = text.text.strip()
+        else:
+            return_type = 'None'
+        return_type = _parse_name(return_type)
 
-    func = REQUEST_TEMPLATE.format(
-        method_name=method_name,
-        http_method=http_method,
-        parameters=', '.join([param for param in parameters]),
-        url=url,
-        method_doc=method_doc,
-        params_doc='\n'.join([FUNCTION_PARAM_TEMPLATE.format(param_name=param_name, param_doc=param_doc) for param_name, param_doc in parameters.items()]),
-        return_type=return_type
-    )
-    slurm_rest_api_script += func
+        parameters = {'path': {}, 'query': {}}
+        labels = method.find_all('h3', class_='field-label')
+        for label, param_items in zip(labels, method.find_all('div', class_='field-items')):
+            items = {}
+            for param, param_doc in zip(param_items.find_all('div', class_='param'), param_items.find_all('div', class_='param-desc')):
+                param_name = param.text
+                if match := re.match(REQUIRED_PARAM, param_name):
+                    key = match.groups()[0]
+                elif match := re.match(OPTIONAL_PARAM, param_name):
+                    key = f'{match.groups()[0]}=None'
+                else:
+                    raise NotImplementedError()
+            
+                items[
+                    _remove_version(key).strip()
+                ] = param_doc.text.strip()
+            parameters[label.text.split()[0].lower()] = items
+
+        
+        func = REQUEST_TEMPLATE.format(
+            method_name=method_name,
+            http_method=http_method,
+            parameters=', '.join([param for param in list(parameters['path'].keys()) + list(parameters['query'].keys())]),
+            url=url,
+            method_doc=method_doc,
+            params_doc='\n    '.join([FUNCTION_PARAM_TEMPLATE.format(param_name=param_name, param_doc=param_doc) for param_name, param_doc in (list(parameters['path'].items()) + list(parameters['query'].items()))]),
+            return_type=return_type
+        )
+        slurm_rest_api_script += func
 
 
-with open('slurm_rest_api.py', 'w') as f:
-    f.write(autopep8.fix_code(slurm_rest_api_script))
+    with open('slurm_rest_api.py', 'w') as f:
+        f.write(autopep8.fix_code(slurm_rest_api_script))
+
+
+if __name__ == '__main__':
+    main()

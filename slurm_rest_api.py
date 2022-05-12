@@ -1706,8 +1706,8 @@ def slurmctldCancelJob(job_id, signal=None) -> None:
     """
     cancel or signal job (slurmctldCancelJob)
 
-    :param job_id : Path Parameter — Slurm Job ID default: null format: int64
-:param signal=None: Query Parameter — signal to send to job default: null 
+    :param job_id: Path Parameter — Slurm Job ID default: null format: int64
+    :param signal=None: Query Parameter — signal to send to job default: null
     """
     return requests.delete('/slurm/v0.0.37/job/{job_id}')
 
@@ -1725,7 +1725,7 @@ def slurmctldGetJob(job_id) -> JobsResponse:
     """
     get job info (slurmctldGetJob)
 
-    :param job_id : Path Parameter — Slurm Job ID default: null format: int64
+    :param job_id: Path Parameter — Slurm Job ID default: null format: int64
     """
     return requests.get('/slurm/v0.0.37/job/{job_id}')
 
@@ -1743,7 +1743,7 @@ def slurmctldGetNode(node_name) -> NodesResponse:
     """
     get node info (slurmctldGetNode)
 
-    :param node_name : Path Parameter — Slurm Node Name default: null 
+    :param node_name: Path Parameter — Slurm Node Name default: null
     """
     return requests.get('/slurm/v0.0.37/node/{node_name}')
 
@@ -1761,8 +1761,8 @@ def slurmctldGetPartition(partition_name, update_time=None) -> PartitionsRespons
     """
     get partition info (slurmctldGetPartition)
 
-    :param partition_name : Path Parameter — Slurm Partition Name default: null 
-:param update_time=None: Query Parameter — Filter if there were no partition changes (not limited to partition in URL endpoint) since update_time. default: null format: int64
+    :param partition_name: Path Parameter — Slurm Partition Name default: null
+    :param update_time=None: Query Parameter — Filter if there were no partition changes (not limited to partition in URL endpoint) since update_time. default: null format: int64
     """
     return requests.get('/slurm/v0.0.37/partition/{partition_name}')
 
@@ -1780,8 +1780,8 @@ def slurmctldGetReservation(reservation_name, update_time=None) -> ReservationsR
     """
     get reservation info (slurmctldGetReservation)
 
-    :param reservation_name : Path Parameter — Slurm Reservation Name default: null 
-:param update_time=None: Query Parameter — Filter if no reservation (not limited to reservation in URL) changed since update_time. default: null format: int64
+    :param reservation_name: Path Parameter — Slurm Reservation Name default: null
+    :param update_time=None: Query Parameter — Filter if no reservation (not limited to reservation in URL) changed since update_time. default: null format: int64
     """
     return requests.get('/slurm/v0.0.37/reservation/{reservation_name}')
 
@@ -1804,21 +1804,20 @@ def slurmctldPing() -> Pings:
     return requests.get('/slurm/v0.0.37/ping')
 
 
-def slurmctldSubmitJob(job_submission) -> JobSubmissionResponse:
+def slurmctldSubmitJob() -> JobSubmissionResponse:
     """
     submit new job (slurmctldSubmitJob)
 
-    :param job_submission : Body Parameter —  
+
     """
     return requests.post('/slurm/v0.0.37/job/submit')
 
 
-def slurmctldUpdateJob(job_id, job_properties) -> None:
+def slurmctldUpdateJob(job_id) -> None:
     """
     update job (slurmctldUpdateJob)
 
-    :param job_id : Path Parameter — Slurm Job ID default: null format: int64
-:param job_properties : Body Parameter —  
+    :param job_id: Path Parameter — Slurm Job ID default: null format: int64
     """
     return requests.post('/slurm/v0.0.37/job/{job_id}')
 
@@ -1845,16 +1844,19 @@ def slurmdbdDeleteAccount(account_name) -> ResponseAccountDelete:
     """
     Delete account (slurmdbdDeleteAccount)
 
-    :param account_name : Path Parameter — Slurm Account Name default: null 
+    :param account_name: Path Parameter — Slurm Account Name default: null
     """
     return requests.delete('/slurmdb/v0.0.37/account/{account_name}')
 
 
-def slurmdbdDeleteAssociation(cluster=None) -> ResponseAssociationDelete:
+def slurmdbdDeleteAssociation(cluster=None, account, user, partition=None) -> ResponseAssociationDelete:
     """
     Delete association (slurmdbdDeleteAssociation)
 
-    :param cluster=None: Query Parameter — Cluster name default: null 
+    :param cluster=None: Query Parameter — Cluster name default: null
+    :param account: Query Parameter — Account name default: null
+    :param user: Query Parameter — User name default: null
+    :param partition=None: Query Parameter — Partition Name default: null
     """
     return requests.delete('/slurmdb/v0.0.37/association')
 
@@ -1863,7 +1865,7 @@ def slurmdbdDeleteCluster(cluster_name) -> ResponseClusterDelete:
     """
     Delete cluster (slurmdbdDeleteCluster)
 
-    :param cluster_name : Path Parameter — Slurm cluster name default: null 
+    :param cluster_name: Path Parameter — Slurm cluster name default: null
     """
     return requests.delete('/slurmdb/v0.0.37/cluster/{cluster_name}')
 
@@ -1872,7 +1874,7 @@ def slurmdbdDeleteQos(qos_name) -> ResponseQosDelete:
     """
     Delete QOS (slurmdbdDeleteQos)
 
-    :param qos_name : Path Parameter — Slurm QOS Name default: null 
+    :param qos_name: Path Parameter — Slurm QOS Name default: null
     """
     return requests.delete('/slurmdb/v0.0.37/qos/{qos_name}')
 
@@ -1881,7 +1883,7 @@ def slurmdbdDeleteUser(user_name) -> ResponseUserDelete:
     """
     Delete user (slurmdbdDeleteUser)
 
-    :param user_name : Path Parameter — Slurm User Name default: null 
+    :param user_name: Path Parameter — Slurm User Name default: null
     """
     return requests.delete('/slurmdb/v0.0.37/user/{user_name}')
 
@@ -1890,7 +1892,7 @@ def slurmdbdDeleteWckey(wckey) -> ResponseWckeyDelete:
     """
     Delete wckey (slurmdbdDeleteWckey)
 
-    :param wckey : Path Parameter — Slurm wckey name default: null 
+    :param wckey: Path Parameter — Slurm wckey name default: null
     """
     return requests.delete('/slurmdb/v0.0.37/wckey/{wckey}')
 
@@ -1908,7 +1910,7 @@ def slurmdbdGetAccount(account_name) -> AccountInfo:
     """
     Get account info (slurmdbdGetAccount)
 
-    :param account_name : Path Parameter — Slurm Account Name default: null 
+    :param account_name: Path Parameter — Slurm Account Name default: null
     """
     return requests.get('/slurmdb/v0.0.37/account/{account_name}')
 
@@ -1922,11 +1924,14 @@ def slurmdbdGetAccounts() -> AccountInfo:
     return requests.get('/slurmdb/v0.0.37/accounts')
 
 
-def slurmdbdGetAssociation(cluster=None) -> AssociationsInfo:
+def slurmdbdGetAssociation(cluster=None, account=None, user=None, partition=None) -> AssociationsInfo:
     """
     Get association info (slurmdbdGetAssociation)
 
-    :param cluster=None: Query Parameter — Cluster name default: null 
+    :param cluster=None: Query Parameter — Cluster name default: null
+    :param account=None: Query Parameter — Account name default: null
+    :param user=None: Query Parameter — User name default: null
+    :param partition=None: Query Parameter — Partition Name default: null
     """
     return requests.get('/slurmdb/v0.0.37/association')
 
@@ -1944,7 +1949,7 @@ def slurmdbdGetCluster(cluster_name) -> ClusterInfo:
     """
     Get cluster info (slurmdbdGetCluster)
 
-    :param cluster_name : Path Parameter — Slurm cluster name default: null 
+    :param cluster_name: Path Parameter — Slurm cluster name default: null
     """
     return requests.get('/slurmdb/v0.0.37/cluster/{cluster_name}')
 
@@ -1971,12 +1976,12 @@ def slurmdbdGetJob(job_id) -> JobInfo:
     """
     Get job info (slurmdbdGetJob)
 
-    :param job_id : Path Parameter — Slurm Job ID default: null format: int64
+    :param job_id: Path Parameter — Slurm Job ID default: null format: int64
     """
     return requests.get('/slurmdb/v0.0.37/job/{job_id}')
 
 
-def slurmdbdGetJobs(submit_time=None) -> JobInfo:
+def slurmdbdGetJobs(submit_time=None, start_time=None, end_time=None, account=None, association=None, cluster=None, constraints=None, cpus_max=None, cpus_min=None, skip_steps=None, disable_wait_for_result=None, exit_code=None, format=None, group=None, job_name=None, nodes_max=None, nodes_min=None, partition=None, qos=None, reason=None, reservation=None, state=None, step=None, node=None, wckey=None) -> JobInfo:
     """
     Get job list (slurmdbdGetJobs)
 
@@ -1985,7 +1990,41 @@ Accepted formats:
 HH:MM[:SS] [AM|PM]
 MMDD[YY] or MM/DD[/YY] or MM.DD[.YY]
 MM/DD[/YY]-HH:MM[:SS]
-YYYY-MM-DD[THH:MM[:SS]] default: null 
+YYYY-MM-DD[THH:MM[:SS]] default: null
+    :param start_time=None: Query Parameter — Filter by start time
+Accepted formats:
+HH:MM[:SS] [AM|PM]
+MMDD[YY] or MM/DD[/YY] or MM.DD[.YY]
+MM/DD[/YY]-HH:MM[:SS]
+YYYY-MM-DD[THH:MM[:SS]] default: null
+    :param end_time=None: Query Parameter — Filter by end time
+Accepted formats:
+HH:MM[:SS] [AM|PM]
+MMDD[YY] or MM/DD[/YY] or MM.DD[.YY]
+MM/DD[/YY]-HH:MM[:SS]
+YYYY-MM-DD[THH:MM[:SS]] default: null
+    :param account=None: Query Parameter — Comma delimited list of accounts to match default: null
+    :param association=None: Query Parameter — Comma delimited list of associations to match default: null
+    :param cluster=None: Query Parameter — Comma delimited list of cluster to match default: null
+    :param constraints=None: Query Parameter — Comma delimited list of constraints to match default: null
+    :param cpus_max=None: Query Parameter — Number of CPUs high range default: null
+    :param cpus_min=None: Query Parameter — Number of CPUs low range default: null
+    :param skip_steps=None: Query Parameter — Report job step information default: null
+    :param disable_wait_for_result=None: Query Parameter — Disable waiting for result from slurmdbd default: null
+    :param exit_code=None: Query Parameter — Exit code of job default: null
+    :param format=None: Query Parameter — Comma delimited list of formats to match default: null
+    :param group=None: Query Parameter — Comma delimited list of groups to match default: null
+    :param job_name=None: Query Parameter — Comma delimited list of job names to match default: null
+    :param nodes_max=None: Query Parameter — Number of nodes high range default: null
+    :param nodes_min=None: Query Parameter — Number of nodes low range default: null
+    :param partition=None: Query Parameter — Comma delimited list of partitions to match default: null
+    :param qos=None: Query Parameter — Comma delimited list of QOS to match default: null
+    :param reason=None: Query Parameter — Comma delimited list of job reasons to match default: null
+    :param reservation=None: Query Parameter — Comma delimited list of reservations to match default: null
+    :param state=None: Query Parameter — Comma delimited list of states to match default: null
+    :param step=None: Query Parameter — Comma delimited list of job steps to match default: null
+    :param node=None: Query Parameter — Comma delimited list of used nodes to match default: null
+    :param wckey=None: Query Parameter — Comma delimited list of wckeys to match default: null
     """
     return requests.get('/slurmdb/v0.0.37/jobs')
 
@@ -2003,7 +2042,7 @@ def slurmdbdGetSingleQos(qos_name) -> QosInfo:
     """
     Get QOS info (slurmdbdGetSingleQos)
 
-    :param qos_name : Path Parameter — Slurm QOS Name default: null 
+    :param qos_name: Path Parameter — Slurm QOS Name default: null
     """
     return requests.get('/slurmdb/v0.0.37/qos/{qos_name}')
 
@@ -2021,7 +2060,7 @@ def slurmdbdGetUser(user_name) -> UserInfo:
     """
     Get user info (slurmdbdGetUser)
 
-    :param user_name : Path Parameter — Slurm User Name default: null 
+    :param user_name: Path Parameter — Slurm User Name default: null
     """
     return requests.get('/slurmdb/v0.0.37/user/{user_name}')
 
@@ -2039,7 +2078,7 @@ def slurmdbdGetWckey(wckey) -> WckeyInfo:
     """
     Get wckey info (slurmdbdGetWckey)
 
-    :param wckey : Path Parameter — Slurm wckey name default: null 
+    :param wckey: Path Parameter — Slurm wckey name default: null
     """
     return requests.get('/slurmdb/v0.0.37/wckey/{wckey}')
 
